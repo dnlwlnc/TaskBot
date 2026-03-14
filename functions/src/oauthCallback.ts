@@ -16,7 +16,7 @@ if (!admin.apps.length) {
 }
 
 export const oauthCallback = onRequest(
-  {region: "europe-west1"},
+  {region: "europe-central2"},
   async (req, res) => {
     const code = req.query.code as string;
     const chatId = req.query.state as string;
@@ -27,7 +27,7 @@ export const oauthCallback = onRequest(
     }
 
     const redirectUri =
-      `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/oauthCallback`;
+      `https://europe-central2-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/oauthCallback`;
 
     // Exchange code for token
     const tokenRes = await fetch("https://ticktick.com/oauth/token", {

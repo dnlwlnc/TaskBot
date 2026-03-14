@@ -1,0 +1,11 @@
+rules_version='2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Private bot - only authenticated via backend (Cloud Functions)
+    // No client-side access needed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

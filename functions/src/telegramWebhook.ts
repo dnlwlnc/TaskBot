@@ -16,7 +16,7 @@ if (!admin.apps.length) {
 }
 
 export const telegramWebhook = onRequest(
-  {region: "europe-west1"},
+  {region: "europe-central2"},
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(200).send("OK");
@@ -43,7 +43,7 @@ export const telegramWebhook = onRequest(
     }
 
     const oauthRedirectUri =
-      `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/oauthCallback`;
+      `https://europe-central2-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/oauthCallback`;
 
     const ctx = {
       botToken,

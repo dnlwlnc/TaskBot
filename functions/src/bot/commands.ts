@@ -57,8 +57,7 @@ export async function handleTasks(
   if (!token) return;
 
   const projects = await ticktick.getProjects(token);
-  const inbox = projects.find((p) => p.kind === "INBOX");
-  let targetProject = inbox ?? projects[0]; // default: Inbox
+  let targetProject = projects[0]; // default: first project
 
   if (args.trim()) {
     const found = projects.find(
@@ -129,14 +128,12 @@ export async function handleAdd(
     title = title.replace(/--due\s+\S+/, "").trim();
   }
 
-  // Add to Inbox by default
   const projects = await ticktick.getProjects(token);
-  const inbox = projects.find((p) => p.kind === "INBOX");
-  const task = await ticktick.createTask(token, title, inbox?.id, dueDate);
+  const defaultProject = projects[0];
+  const task = await ticktick.createTask(token, title, defaultProject?.id, dueDate);
   let reply = `Dodano: ${task.title}`;
-  if (task.dueDate) {
-    reply += ` (📅 ${task.dueDate.substring(0, 10)})`;
-  }
+  if (task.dueDate) reply += ` (📅 ${task.dueDate.substring(0, 10)})`;
+  if (defaultProject) reply += `\n_→ ${defaultProject.name}_`;
   await sendMessage(ctx.botToken, ctx.chatId, reply);
 }
 

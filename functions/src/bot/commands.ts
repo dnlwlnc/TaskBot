@@ -1,3 +1,4 @@
+import * as chrono from "chrono-node";
 import {sendMessage} from "../services/telegram";
 import * as store from "../services/firestore";
 import * as ticktick from "../services/ticktick";
@@ -117,13 +118,15 @@ export async function handleAdd(
 
   if (!args.trim()) return;
 
-  // Parse --due flag
+  // Auto-detect date from natural language (with Polish→English translation)
   let title = args.trim();
   let dueDate: string | undefined;
-  const dueMatch = title.match(/--due\s+(\S+)/);
-  if (dueMatch) {
-    dueDate = parseDueDate(dueMatch[1]);
-    title = title.replace(/--due\s+\S+/, "").trim();
+  const translated = translatePolishDates(title);
+  const parsed = chrono.casual.parse(translated, new Date(), {forwardDate: true})[0];
+  if (parsed) {
+    dueDate = toISODate(parsed.date());
+    // Remove the original Polish date text from title using same position
+    title = (title.slice(0, parsed.index) + title.slice(parsed.index + parsed.text.length)).trim();
   }
 
   const DEFAULT_PROJECT_ID = "69626abde3c911257fd7dee6";
@@ -178,25 +181,43 @@ async function requireToken(ctx: CommandContext): Promise<string | null> {
   return tokenData.access_token;
 }
 
-function parseDueDate(input: string): string {
-  const now = new Date();
-  switch (input.toLowerCase()) {
-  case "today":
-    return toISODate(now);
-  case "tomorrow": {
-    const d = new Date(now);
-    d.setDate(d.getDate() + 1);
-    return toISODate(d);
-  }
-  default:
-    // Assume ISO format (YYYY-MM-DD), pass through with time
-    return `${input}T00:00:00.000+0000`;
-  }
-}
 
 function toISODate(d: Date): string {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}T00:00:00.000+0000`;
+}
+
+function translatePolishDates(text: string): string {
+  const map: [RegExp, string][] = [
+    [/\bdzisiaj\b/gi, "today"],
+    [/\bdziś\b/gi, "today"],
+    [/\bjutro\b/gi, "tomorrow"],
+    [/\bpojutrze\b/gi, "in 2 days"],
+    [/\bponiedzialek\b|\bponiedzialek\b/gi, "monday"],
+    [/\bponiedziałek\b/gi, "monday"],
+    [/\bwtorek\b/gi, "tuesday"],
+    [/\bśrodę\b|\bsrodę\b|\bśroda\b|\bsroda\b|\bw środę\b/gi, "wednesday"],
+    [/\bczwartek\b/gi, "thursday"],
+    [/\bpiątek\b|\bpiatek\b/gi, "friday"],
+    [/\bsobotę\b|\bsobota\b|\bsobote\b/gi, "saturday"],
+    [/\bniedzielę\b|\bniedziela\b|\bniedziele\b/gi, "sunday"],
+    [/\bstyczeń\b|\bstycznia\b/gi, "january"],
+    [/\blutego\b|\bluty\b/gi, "february"],
+    [/\bmarca\b|\bmarzec\b/gi, "march"],
+    [/\bkwietnia\b|\bkwiecień\b/gi, "april"],
+    [/\bmaja\b|\bmaj\b/gi, "may"],
+    [/\bczerwca\b|\bczerwiec\b/gi, "june"],
+    [/\blipca\b|\blipiec\b/gi, "july"],
+    [/\bsierpnia\b|\bsierpień\b/gi, "august"],
+    [/\bwrześnia\b|\bwrzesień\b/gi, "september"],
+    [/\bpaździernika\b|\bpaździernik\b/gi, "october"],
+    [/\blistopada\b|\blistopad\b/gi, "november"],
+    [/\bgrudnia\b|\bgrudzień\b/gi, "december"],
+    [/\bza tydzień\b/gi, "next week"],
+    [/\bza miesiąc\b/gi, "next month"],
+    [/\bza (\d+) dni\b/gi, "in $1 days"],
+  ];
+  return map.reduce((t, [re, rep]) => t.replace(re, rep), text);
 }

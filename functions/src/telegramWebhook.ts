@@ -35,8 +35,9 @@ export const telegramWebhook = onRequest(
     const userId = message.from.id;
     const botToken = telegramBotToken.value();
 
-    // Owner check
-    if (String(userId) !== telegramOwnerId.value()) {
+    // Owner check (TELEGRAM_OWNER_ID supports comma-separated IDs)
+    const allowedIds = telegramOwnerId.value().split(",").map((id) => id.trim());
+    if (!allowedIds.includes(String(userId))) {
       await sendMessage(botToken, chatId, MSG_UNAUTHORIZED);
       res.status(200).send("OK");
       return;

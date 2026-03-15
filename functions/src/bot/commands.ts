@@ -57,7 +57,8 @@ export async function handleTasks(
   if (!token) return;
 
   const projects = await ticktick.getProjects(token);
-  let targetProject = projects[0]; // default: first project
+  const inbox = projects.find((p) => p.kind === "INBOX");
+  let targetProject = inbox ?? projects[0]; // default: Inbox
 
   if (args.trim()) {
     const found = projects.find(
@@ -128,7 +129,10 @@ export async function handleAdd(
     title = title.replace(/--due\s+\S+/, "").trim();
   }
 
-  const task = await ticktick.createTask(token, title, undefined, dueDate);
+  // Add to Inbox by default
+  const projects = await ticktick.getProjects(token);
+  const inbox = projects.find((p) => p.kind === "INBOX");
+  const task = await ticktick.createTask(token, title, inbox?.id, dueDate);
   let reply = `Dodano: ${task.title}`;
   if (task.dueDate) {
     reply += ` (📅 ${task.dueDate.substring(0, 10)})`;

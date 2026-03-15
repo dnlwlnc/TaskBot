@@ -115,10 +115,7 @@ export async function handleAdd(
   const token = await requireToken(ctx);
   if (!token) return;
 
-  if (!args.trim()) {
-    await sendMessage(ctx.botToken, ctx.chatId, "Użycie: /add <treść zadania> [--due <data>]");
-    return;
-  }
+  if (!args.trim()) return;
 
   // Parse --due flag
   let title = args.trim();
@@ -133,9 +130,8 @@ export async function handleAdd(
   const projects = await ticktick.getProjects(token);
   const defaultProject = projects.find((p) => p.id === DEFAULT_PROJECT_ID) ?? projects[0];
   const task = await ticktick.createTask(token, title, defaultProject?.id, dueDate);
-  let reply = `Dodano: ${task.title}`;
+  let reply = `✓ ${task.title}`;
   if (task.dueDate) reply += ` (📅 ${task.dueDate.substring(0, 10)})`;
-  if (defaultProject) reply += `\n_→ ${defaultProject.name}_`;
   await sendMessage(ctx.botToken, ctx.chatId, reply);
 }
 

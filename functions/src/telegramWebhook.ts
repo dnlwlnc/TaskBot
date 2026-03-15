@@ -9,7 +9,7 @@ import * as commands from "./bot/commands";
 const telegramBotToken = defineString("TELEGRAM_BOT_TOKEN");
 const ticktickClientId = defineString("TICKTICK_CLIENT_ID");
 const ticktickClientSecret = defineString("TICKTICK_CLIENT_SECRET");
-const telegramOwnerId = defineString("TELEGRAM_OWNER_ID");
+const telegramAllowedIds = defineString("TELEGRAM_ALLOWED_IDS");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -35,8 +35,9 @@ export const telegramWebhook = onRequest(
     const userId = message.from.id;
     const botToken = telegramBotToken.value();
 
-    // Owner check
-    if (String(userId) !== telegramOwnerId.value()) {
+    // Allowlist check
+    const allowedIds = telegramAllowedIds.value().split(",").map((id) => id.trim());
+    if (!allowedIds.includes(String(userId))) {
       await sendMessage(botToken, chatId, MSG_UNAUTHORIZED);
       res.status(200).send("OK");
       return;
@@ -81,7 +82,8 @@ export const telegramWebhook = onRequest(
         await commands.handleDone(ctx, args);
         break;
       default:
-        await sendMessage(botToken, chatId, "Nieznana komenda. Użyj /start aby zobaczyć dostępne komendy.");
+        // Anything that's not a command → add as task
+        await commands.handleAdd(ctx, text);
       }
     } catch (err) {
       console.error("Command error:", err);

@@ -35,8 +35,8 @@ export const telegramWebhook = onRequest(
     const userId = message.from.id;
     const botToken = telegramBotToken.value();
 
-    // Allowlist check
-    const allowedIds = telegramAllowedIds.value().split(",").map((id) => id.trim());
+    // Allowlist check — strip any non-digit chars to handle invisible characters from copy-paste
+    const allowedIds = telegramAllowedIds.value().split(",").map((id) => id.replace(/\D/g, ""));
     if (!allowedIds.includes(String(userId))) {
       await sendMessage(botToken, chatId, MSG_UNAUTHORIZED);
       res.status(200).send("OK");

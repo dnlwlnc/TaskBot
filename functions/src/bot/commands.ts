@@ -56,8 +56,9 @@ export async function handleTasks(
   const token = await requireToken(ctx);
   if (!token) return;
 
+  const DEFAULT_PROJECT_ID = "69626abde3c911257fd7dee6";
   const projects = await ticktick.getProjects(token);
-  let targetProject = projects[0]; // default: first project
+  let targetProject = projects.find((p) => p.id === DEFAULT_PROJECT_ID) ?? projects[0];
 
   if (args.trim()) {
     const found = projects.find(
@@ -128,8 +129,9 @@ export async function handleAdd(
     title = title.replace(/--due\s+\S+/, "").trim();
   }
 
+  const DEFAULT_PROJECT_ID = "69626abde3c911257fd7dee6";
   const projects = await ticktick.getProjects(token);
-  const defaultProject = projects[0];
+  const defaultProject = projects.find((p) => p.id === DEFAULT_PROJECT_ID) ?? projects[0];
   const task = await ticktick.createTask(token, title, defaultProject?.id, dueDate);
   let reply = `Dodano: ${task.title}`;
   if (task.dueDate) reply += ` (📅 ${task.dueDate.substring(0, 10)})`;

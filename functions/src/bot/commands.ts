@@ -97,7 +97,11 @@ export async function handleTasks(
   const lines = activeTasks.map((t, i) => {
     let line = `${i + 1}. ${t.title}`;
     if (t.dueDate) {
-      line += ` (📅 ${t.dueDate.substring(0, 10)})`;
+      line += ` (📅 ${t.dueDate.substring(0, 10)}`;
+      if (t.dueDate.includes("T") && !t.dueDate.includes("T00:00:00")) {
+        line += ` ⏰ ${t.dueDate.substring(11, 16)}`;
+      }
+      line += ")";
     }
     return line;
   });

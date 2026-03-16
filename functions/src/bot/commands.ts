@@ -124,7 +124,8 @@ export async function handleAdd(
   const translated = translatePolishDates(title);
   const parsed = chrono.casual.parse(translated, new Date(), {forwardDate: true})[0];
   if (parsed) {
-    dueDate = toISODate(parsed.date());
+    const hasTime = parsed.start.isCertain("hour");
+    dueDate = toISODateTime(parsed.date(), hasTime);
     // Remove the original Polish date text from title using same position
     title = (title.slice(0, parsed.index) + title.slice(parsed.index + parsed.text.length)).trim();
   }
@@ -134,7 +135,13 @@ export async function handleAdd(
   const defaultProject = projects.find((p) => p.id === DEFAULT_PROJECT_ID) ?? projects[0];
   const task = await ticktick.createTask(token, title, defaultProject?.id, dueDate);
   let reply = `✓ ${task.title}`;
-  if (task.dueDate) reply += ` (📅 ${task.dueDate.substring(0, 10)})`;
+  if (task.dueDate) {
+    reply += ` (📅 ${task.dueDate.substring(0, 10)}`;
+    if (task.dueDate.includes("T") && !task.dueDate.includes("T00:00:00")) {
+      reply += ` ⏰ ${task.dueDate.substring(11, 16)}`;
+    }
+    reply += ")";
+  }
   await sendMessage(ctx.botToken, ctx.chatId, reply);
 }
 
@@ -182,11 +189,19 @@ async function requireToken(ctx: CommandContext): Promise<string | null> {
 }
 
 
-function toISODate(d: Date): string {
+// Poland timezone offset (CET +0100 / CEST +0200)
+const PL_OFFSET = "+0100";
+
+function toISODateTime(d: Date, includeTime: boolean): string {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T00:00:00.000+0000`;
+  if (!includeTime) {
+    return `${yyyy}-${mm}-${dd}T00:00:00.000+0000`;
+  }
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00.000${PL_OFFSET}`;
 }
 
 function translatePolishDates(text: string): string {
@@ -218,6 +233,9 @@ function translatePolishDates(text: string): string {
     [/\bza tydzień\b/gi, "next week"],
     [/\bza miesiąc\b/gi, "next month"],
     [/\bza (\d+) dni\b/gi, "in $1 days"],
+    [/\bna (\d{1,2}[:.]\d{2})\b/gi, "at $1"],
+    [/\bo (\d{1,2}[:.]\d{2})\b/gi, "at $1"],
+    [/\bo godz\.?\s*(\d{1,2}[:.]\d{2})\b/gi, "at $1"],
   ];
   return map.reduce((t, [re, rep]) => t.replace(re, rep), text);
 }

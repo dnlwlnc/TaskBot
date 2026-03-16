@@ -97,10 +97,9 @@ export async function handleTasks(
   const lines = activeTasks.map((t, i) => {
     let line = `${i + 1}. ${t.title}`;
     if (t.dueDate) {
-      line += ` (📅 ${t.dueDate.substring(0, 10)}`;
-      if (t.dueDate.includes("T") && !t.dueDate.includes("T00:00:00")) {
-        line += ` ⏰ ${t.dueDate.substring(11, 16)}`;
-      }
+      const {date, time} = formatDueDateWarsaw(t.dueDate);
+      line += ` (📅 ${date}`;
+      if (time) line += ` ⏰ ${time}`;
       line += ")";
     }
     return line;
@@ -195,6 +194,21 @@ async function requireToken(ctx: CommandContext): Promise<string | null> {
   return tokenData.access_token;
 }
 
+
+function formatDueDateWarsaw(dueDate: string): {date: string; time: string | null} {
+  const d = new Date(dueDate);
+  const fmt = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Warsaw",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const parts = fmt.formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const date = `${get("year")}-${get("month")}-${get("day")}`;
+  const hasTime = !dueDate.includes("T00:00:00");
+  const time = hasTime ? `${get("hour")}:${get("minute")}` : null;
+  return {date, time};
+}
 
 function getWarsawOffset(d: Date): string {
   const fmt = new Intl.DateTimeFormat("en", {

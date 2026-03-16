@@ -189,8 +189,19 @@ async function requireToken(ctx: CommandContext): Promise<string | null> {
 }
 
 
-// Poland timezone offset (CET +0100 / CEST +0200)
-const PL_OFFSET = "+0100";
+function getWarsawOffset(d: Date): string {
+  const fmt = new Intl.DateTimeFormat("en", {
+    timeZone: "Europe/Warsaw",
+    timeZoneName: "shortOffset",
+  });
+  const parts = fmt.formatToParts(d);
+  const tz = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+1";
+  const match = tz.match(/GMT([+-])(\d+)/);
+  if (match) {
+    return `${match[1]}${match[2].padStart(2, "0")}00`;
+  }
+  return "+0100";
+}
 
 function toISODateTime(d: Date, includeTime: boolean): string {
   const yyyy = d.getFullYear();
@@ -201,7 +212,8 @@ function toISODateTime(d: Date, includeTime: boolean): string {
   }
   const hh = String(d.getHours()).padStart(2, "0");
   const min = String(d.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00.000${PL_OFFSET}`;
+  const offset = getWarsawOffset(d);
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:00.000${offset}`;
 }
 
 function translatePolishDates(text: string): string {

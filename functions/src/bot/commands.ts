@@ -126,19 +126,22 @@ export async function handleAdd(
   if (parsed) {
     const hasTime = parsed.start.isCertain("hour");
     dueDate = toISODateTime(parsed.date(), hasTime);
-    // Remove the original Polish date text from title using same position
-    title = (title.slice(0, parsed.index) + title.slice(parsed.index + parsed.text.length)).trim();
+    // Remove date text from translated string, then clean up orphaned Polish prepositions
+    title = (translated.slice(0, parsed.index) + translated.slice(parsed.index + parsed.text.length))
+      .replace(/\s+(na|o|w|we)\s*$/i, "")
+      .trim();
   }
 
   const DEFAULT_PROJECT_ID = "69626abde3c911257fd7dee6";
   const projects = await ticktick.getProjects(token);
   const defaultProject = projects.find((p) => p.id === DEFAULT_PROJECT_ID) ?? projects[0];
   const task = await ticktick.createTask(token, title, defaultProject?.id, dueDate);
+  // Use our local dueDate for the reply (TickTick API returns UTC which shifts the time)
   let reply = `✓ ${task.title}`;
-  if (task.dueDate) {
-    reply += ` (📅 ${task.dueDate.substring(0, 10)}`;
-    if (task.dueDate.includes("T") && !task.dueDate.includes("T00:00:00")) {
-      reply += ` ⏰ ${task.dueDate.substring(11, 16)}`;
+  if (dueDate) {
+    reply += ` (📅 ${dueDate.substring(0, 10)}`;
+    if (!dueDate.includes("T00:00:00")) {
+      reply += ` ⏰ ${dueDate.substring(11, 16)}`;
     }
     reply += ")";
   }

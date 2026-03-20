@@ -49,6 +49,9 @@ export const telegramWebhook = onRequest(
     const ctx = {
       botToken,
       chatId,
+      userId,
+      firstName: message.from.first_name,
+      allowedIds,
       clientId: ticktickClientId.value(),
       clientSecret: ticktickClientSecret.value(),
       oauthRedirectUri,

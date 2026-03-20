@@ -7,6 +7,9 @@ import * as msg from "./messages";
 interface CommandContext {
   botToken: string;
   chatId: number;
+  userId: number;
+  firstName: string;
+  allowedIds: string[];
   clientId: string;
   clientSecret: string;
   oauthRedirectUri: string;
@@ -149,6 +152,21 @@ export async function handleAdd(
     reply += ")";
   }
   await sendMessage(ctx.botToken, ctx.chatId, reply);
+
+  // Notify other users
+  let notify = `📌 ${ctx.firstName}: ${task.title}`;
+  if (dueDate) {
+    notify += ` (📅 ${dueDate.substring(0, 10)}`;
+    if (!dueDate.includes("T00:00:00")) {
+      notify += ` ⏰ ${dueDate.substring(11, 16)}`;
+    }
+    notify += ")";
+  }
+  for (const id of ctx.allowedIds) {
+    if (id !== String(ctx.userId)) {
+      await sendMessage(ctx.botToken, parseInt(id, 10), notify);
+    }
+  }
 }
 
 export async function handleDone(

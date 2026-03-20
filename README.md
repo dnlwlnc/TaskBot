@@ -45,6 +45,14 @@ Strefa czasowa (CET/CEST) wykrywana automatycznie.
 
 Wszystko co nie jest komendą traktowane jest jako nowe zadanie.
 
+### Powiadomienia
+
+Gdy ktoś doda zadanie, pozostali użytkownicy z `TELEGRAM_ALLOWED_IDS` dostają powiadomienie:
+
+```
+📌 Ania: Kupić mleko (📅 2026-03-18 ⏰ 09:00)
+```
+
 ## Stack
 
 - **Firebase Cloud Functions** (Node.js 20, 2nd gen) — logika bota i OAuth2 callback
